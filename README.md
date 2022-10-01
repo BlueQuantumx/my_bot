@@ -1,2 +1,2 @@
 # my_bot
-Bingyan Internship Program
+Bingyan Internship Program by BlueQuantum（周陆延）
