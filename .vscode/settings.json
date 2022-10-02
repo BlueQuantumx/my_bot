@@ -1,3 +1,11 @@
 {
-  "code-runner.runInTerminal": false
+  "code-runner.runInTerminal": false,
+  "[markdown]": {
+    "editor.renderWhitespace": "all",
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": true,
+    },
+    "editor.acceptSuggestionOnEnter": "on",
+  }
 }
