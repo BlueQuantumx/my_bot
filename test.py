@@ -1,4 +1,5 @@
 import asyncio
+from functools import reduce
 import json
 import websockets
 
@@ -6,22 +7,29 @@ IP_ADDR = "127.0.0.1"
 IP_PORT = "8080"
 
 
+def cq_code_at(user_id: int) -> str:
+  return "[CQ:at,qq=" + str(user_id) + "]"
+
+
 async def serverRecv(websocket):
   while True:
     res = json.loads(await websocket.recv())
-    if (res["post_type"] == "message"):
-      print(res["message_id"])
-      await websocket.send(
-          json.dumps({
-              "action": "get_msg",
-              "params": {
-                  "message_id": res["message_id"]
-              },
-          }))
-      msg = await websocket.recv()
+    if (res["post_type"] == "message" and res["message_type"] == "group"):
+      msg: list = res["message"].split()
+      if (msg[0] == "/echo"):
+        echo_msg = reduce(lambda x, y: x + y, msg[1:])
+        await websocket.send(
+            json.dumps({
+                "action": "send_group_msg",
+                "params": {
+                    "group_id": res["group_id"],
+                    "message": cq_code_at(res["user_id"]) + ' ' + echo_msg
+                },
+            }))
+      print(msg)
       print("res:", res)
-      print("msg:", msg)
-    print(res["post_type"])
+    if (res["post_type"] != "meta_event"):
+      print(res["post_type"])
 
 
 async def serverRun(websocket, path):
