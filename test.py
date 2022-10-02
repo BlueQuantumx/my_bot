@@ -13,7 +13,9 @@ def cq_code_at(user_id: int) -> str:
 
 async def serverRecv(websocket):
   while True:
-    res = json.loads(await websocket.recv())
+    res: dict = json.loads(await websocket.recv())
+    print(res)
+    print('\n')
     if (res["post_type"] == "message" and res["message_type"] == "group"):
       msg: list = res["message"].split()
       if (msg[0] == "/echo"):
@@ -26,6 +28,7 @@ async def serverRecv(websocket):
                     "message": cq_code_at(res["user_id"]) + ' ' + echo_msg
                 },
             }))
+        await websocket.recv()  # {data}
       print(msg)
       print("res:", res)
     if (res["post_type"] != "meta_event"):
