@@ -18,8 +18,8 @@ async def echo(message: dict, websocket):
                     "message": cq_code_at(message["user_id"]) + echo_msg
                 },
             }))
-      print(msg)
-      print("res:", message)
+        print(msg)
+        print("res:", message)
   except Exception as e:
-    print("Exception: ", e)
+    print("Exception_from_echo:", e)
     print(message)
