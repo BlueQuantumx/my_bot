@@ -1,6 +1,6 @@
 import json
 
-from utils import cq_code_at
+from utils import cq_code_at, cq_code_image
 
 intended_users_tag = {}  # {user_id: tag}
 image_tag: dict = {}  # {tag: (file_id, url)}
@@ -10,7 +10,7 @@ def parse_cq_image(msg: str):
   if msg[0:9] != "[CQ:image":
     raise Exception("Not image!")
   arg = msg.split(',')
-  return (arg[2][4:], arg[3][4:])
+  return (arg[2][4:], arg[3][4:-1])  # -1去掉末尾 ]
 
 
 def add_intended_user(message):
@@ -37,15 +37,41 @@ async def add_image_tag(message, websocket):
         }))
 
 
+async def send_image(message: dict, websocket):
+  try:
+    tag = message["message"][1:]
+    if image_tag.get(tag) == None:
+      await websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id": message["group_id"],
+                  "message": cq_code_at(message["user_id"]) + "没有这张图片哦"
+              },
+          }))
+    else:
+      file_id, url = image_tag[tag]
+      await websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id": message["group_id"],
+                  "message": cq_code_image(file_id, url)
+              },
+          }))
+  except Exception as e:
+    print("Exception_from_send_image:", e)
+
+
 async def image_lib(message: dict, websocket):
   try:
     if (message["post_type"] == "message"
-        and message["message_type"] == "group"
-        and message["message"][0:7] == "收藏 tag="):
-      add_intended_user(message)
-    elif (message["post_type"] == "message"
-          and message["message_type"] == "group"
-          and intended_users_tag.get(message["user_id"]) != None):
-      add_image_tag(message, websocket)
+        and message["message_type"] == "group"):
+      if message["message"][0:7] == "收藏 tag=":
+        add_intended_user(message)
+      elif intended_users_tag.get(message["user_id"]) != None:
+        await add_image_tag(message, websocket)
+      elif message["message"][0:1] == "发":
+        await send_image(message, websocket)
   except Exception as e:
     print("Exception_from_image_lib:", e)
