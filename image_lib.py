@@ -31,10 +31,8 @@ async def add_image_tag(message, websocket):
         json.dumps({
             "action": "send_group_msg",
             "params": {
-                "group_id":
-                message["group_id"],
-                "message":
-                cq_code_at(message["user_id"]) + "出错了，检查一下使用方式吧！\n" + "Error: "
+                "group_id": message["group_id"],
+                "message": cq_code_at(message["user_id"]) + "出错了，检查一下使用方式吧！\n"
             },
         }))
 
