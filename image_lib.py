@@ -7,10 +7,11 @@ image_tag: dict = {}  # {tag: (file_id, url)}
 
 
 def parse_cq_image(msg: str):
-  if msg[0:9] != "[CQ:image":
+  msg = msg[1:-1]
+  if msg[0:9] != "CQ:image":
     raise Exception("Not image!")
   arg = msg.split(',')
-  return (arg[2][4:], arg[3][4:-1])  # -1去掉末尾 ]
+  return (arg[1][4:], arg[3][4:])
 
 
 def add_intended_user(message):
