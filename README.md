@@ -12,4 +12,4 @@ Bingyan Internship Program by BlueQuantum（周陆延）
 
 ## 10.3
 
-to be continued
+搞完了 Stage 1，但是逻辑貌似有问题，以及还没有考虑缓存问题，也没有持久化
