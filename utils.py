@@ -15,3 +15,11 @@ def parse_cq_image(msg: str):
     raise Exception("Not image!")
   arg = msg.split(',')
   return (arg[1][5:], arg[3][4:])
+
+
+def parse_cq_reply(msg: str):
+  msg = msg[1:-1]
+  if msg[0:8] != "CQ:reply":
+    raise Exception("Not reply!")
+  arg = msg.split(',')
+  return arg[1][3:]
