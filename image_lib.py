@@ -155,7 +155,7 @@ async def ban_user(message, websocket):
   if (user_info["role"] == "admin" or user_info["role"] == "owner"):
     try:
       user_id = parse_cq_at(message["message"][4:])
-      if banned_user.count(user_id) != 0:  # TODO
+      if banned_user.count(user_id) == 0:  # TODO
         banned_user.append(user_id)
     except:
       websocket.send(
@@ -179,7 +179,32 @@ async def ban_user(message, websocket):
 
 
 async def unban_user(message, websocket):
-  pass
+  user_info = await get_group_member_info(message, websocket)
+  if (user_info["role"] == "admin" or user_info["role"] == "owner"):
+    try:
+      user_id = parse_cq_at(message["message"][6:])
+      if banned_user.count(user_id) != 0:  # TODO
+        banned_user.pop(user_id)
+    except:
+      websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id":
+                  message["group_id"],
+                  "message":
+                  cq_code_at(message["user_id"]) + "出错力，食用方法：unban @user"
+              },
+          }))
+  else:
+    websocket.send(
+        json.dumps({
+            "action": "send_group_msg",
+            "params": {
+                "group_id": message["group_id"],
+                "message": cq_code_at(message["user_id"]) + "还要向上爬才能 unban 别人哦"
+            },
+        }))
 
 
 async def image_lib(message: dict, websocket):
