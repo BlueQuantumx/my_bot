@@ -23,3 +23,11 @@ def parse_cq_reply(msg: str):
     raise Exception("Not reply!")
   arg = msg.split(',')
   return arg[1][3:]
+
+
+def parse_cq_at(msg: str):
+  msg = msg[1:-1]
+  if msg[0:5] != "CQ:at":
+    raise Exception("Not at!")
+  arg = msg.split(',')
+  return arg[1][3:]
