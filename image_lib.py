@@ -1,6 +1,6 @@
 import json
 import atexit
-from utils import cq_code_at, cq_code_image, parse_cq_image
+from utils import cq_code_at, cq_code_image, parse_cq_image, parse_cq_reply
 
 intended_users_tag = {}  # {user_id: tag}
 image_tag: dict = {}  # {user_id: {tag: (file_id, url)}}
@@ -63,7 +63,7 @@ async def send_image(message: dict, websocket):
                   "message": cq_code_at(user_id) + "你还没有收藏过图片哦"
               },
           }))
-    elif image_tag[user_id][tag] == None:
+    elif image_tag[user_id].get(tag) == None:
       await websocket.send(
           json.dumps({
               "action": "send_group_msg",
@@ -86,6 +86,64 @@ async def send_image(message: dict, websocket):
     print("Exception_from_send_image:", e)
 
 
+async def cancel_collection(message: dict, websocket):
+  try:
+    reply_id = parse_cq_reply('[' + message["message"].split('[')[1])
+  except:
+    await websocket.send(
+        json.dumps({
+            "action": "send_group_msg",
+            "params": {
+                "group_id": message["group_id"],
+                "message": "请选择图片"
+            },
+        }))
+    return
+
+  await websocket.send(
+      json.dumps({
+          "action": "get_msg",
+          "params": {
+              "message_id": reply_id,
+          },
+      }))
+  reply_msg = json.loads(await websocket.recv())["data"]
+  (file, _) = parse_cq_image(reply_msg["message"])
+  for (uid, tags) in image_tag.items():
+    for (tag, val) in tags.items():
+      if (val[0] == file):
+        await websocket.send(
+            json.dumps({
+                "action": "get_group_member_info",
+                "params": {
+                    "group_id": message["group_id"],
+                    "user_id": message["user_id"],
+                },
+            }))
+        user_msg = json.loads(await websocket.recv())["data"]
+        if user_msg["role"] == "admin" or user_msg[
+            "role"] == "owner" or uid == message["user_id"]:
+          tags.pop(tag)
+          await websocket.send(
+              json.dumps({
+                  "action": "send_group_msg",
+                  "params": {
+                      "group_id": message["group_id"],
+                      "message": "取消成功"
+                  },
+              }))
+        else:
+          await websocket.send(
+              json.dumps({
+                  "action": "send_group_msg",
+                  "params": {
+                      "group_id": message["group_id"],
+                      "message": "取消失败，请确认权限"
+                  },
+              }))
+        return
+
+
 async def image_lib(message: dict, websocket):
   try:
     if (message["post_type"] == "message"
@@ -97,6 +155,8 @@ async def image_lib(message: dict, websocket):
         await add_image_tag(message, websocket)
       elif message["message"][0:2] == "发 ":
         await send_image(message, websocket)
+      elif message["message"][-4:] == "取消收藏":
+        await cancel_collection(message, websocket)
 
   except Exception as e:
     print("Exception_from_image_lib:", e)
