@@ -4,12 +4,13 @@ import websockets
 
 from debug import debug_print
 from echo import echo
-from image_lib import image_lib
+import image_lib
 
 IP_ADDR = "127.0.0.1"
 IP_PORT = "8080"
 
-plugins = [debug_print, echo, image_lib]
+image_lib.init()
+plugins = [debug_print, echo, image_lib.image_lib]
 
 
 async def serverRecv(websocket):

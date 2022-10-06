@@ -2,3 +2,5 @@ logs/
 data/
 session.token
 __pycache__/
+image_tag.json
+intended_user_tag.json

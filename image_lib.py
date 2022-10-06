@@ -1,17 +1,26 @@
 import json
-
-from utils import cq_code_at, cq_code_image
+import atexit
+from utils import cq_code_at, cq_code_image, parse_cq_image
 
 intended_users_tag = {}  # {user_id: tag}
 image_tag: dict = {}  # {user_id: {tag: (file_id, url)}}
 
 
-def parse_cq_image(msg: str):
-  msg = msg[1:-1]
-  if msg[0:8] != "CQ:image":
-    raise Exception("Not image!")
-  arg = msg.split(',')
-  return (arg[1][4:], arg[3][4:])
+def init() -> None:
+  with open("intended_user_tag.json", "r") as file:
+    intended_users_tag.__init__(json.loads(file.read()))
+  with open("image_tag.json", "r") as file:
+    image_tag.__init__(json.loads(file.read()))
+  print("Image_Lib initialized")
+
+
+@atexit.register
+def destroy() -> None:
+  with open("intended_user_tag.json", "w") as file:
+    file.write(json.dumps(intended_users_tag))
+  with open("image_tag.json", "w") as file:
+    file.write(json.dumps(image_tag))
+  print("Image_Lib destroyed")
 
 
 def add_intended_user(message):
@@ -27,7 +36,6 @@ async def add_image_tag(message, websocket):
     image_tag[message["user_id"]][intended_users_tag[
         message["user_id"]]] = parse_cq_image(message["message"])
     print("Added image tag:", intended_users_tag[message["user_id"]])
-    intended_users_tag.pop(message["user_id"])
   except Exception as e:
     print("Exception from add tag:", e)
     await websocket.send(
@@ -38,6 +46,8 @@ async def add_image_tag(message, websocket):
                 "message": cq_code_at(message["user_id"]) + "出错了，检查一下使用方式吧！\n"
             },
         }))
+  finally:
+    intended_users_tag.pop(message["user_id"])
 
 
 async def send_image(message: dict, websocket):
@@ -80,6 +90,7 @@ async def image_lib(message: dict, websocket):
   try:
     if (message["post_type"] == "message"
         and message["message_type"] == "group"):
+      message["user_id"] = str(message["user_id"])
       if message["message"][0:7] == "收藏 tag=":
         add_intended_user(message)
       elif intended_users_tag.get(message["user_id"]) != None:
