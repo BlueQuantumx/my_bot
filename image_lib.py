@@ -12,6 +12,8 @@ def init() -> None:
     intended_users_tag.__init__(json.loads(file.read()))
   with open("image_tag.json", "r") as file:
     image_tag.__init__(json.loads(file.read()))
+  with open("banned_user.json", "r") as file:
+    banned_user.__init__(json.loads(file.read()))
   print("Image_Lib initialized")
 
 
@@ -21,10 +23,22 @@ def destroy() -> None:
     file.write(json.dumps(intended_users_tag))
   with open("image_tag.json", "w") as file:
     file.write(json.dumps(image_tag))
+  with open("banned_user.json", "w") as file:
+    file.write(json.dumps(banned_user))
   print("Image_Lib destroyed")
 
 
-def add_intended_user(message):
+async def add_intended_user(message, websocket):
+  if banned_user.count(message["user_id"]) != 0:
+    await websocket.send(
+        json.dumps({
+            "action": "send_group_msg",
+            "params": {
+                "group_id": message["group_id"],
+                "message": cq_code_at(message["user_id"]) + "你被 ban 了"
+            },
+        }))
+    return
   tag = message["message"][7:]
   intended_users_tag[message["user_id"]] = tag
   print(str(message["user_id"]) + " added tag: " + tag)
@@ -52,6 +66,16 @@ async def add_image_tag(message, websocket):
 
 
 async def send_image(message: dict, websocket):
+  if banned_user.count(message["user_id"]) != 0:
+    await websocket.send(
+        json.dumps({
+            "action": "send_group_msg",
+            "params": {
+                "group_id": message["group_id"],
+                "message": cq_code_at(message["user_id"]) + "你被 ban 了"
+            },
+        }))
+    return
   try:
     tag = message["message"][2:]
     user_id = message["user_id"]
@@ -154,11 +178,19 @@ async def ban_user(message, websocket):
   user_info = await get_group_member_info(message, websocket)
   if (user_info["role"] == "admin" or user_info["role"] == "owner"):
     try:
-      user_id = parse_cq_at(message["message"][4:])
+      user_id = parse_cq_at(message["message"][4:].strip())
       if banned_user.count(user_id) == 0:  # TODO
         banned_user.append(user_id)
+      await websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id": message["group_id"],
+                  "message": cq_code_at(message["user_id"]) + "操作成功"
+              },
+          }))
     except:
-      websocket.send(
+      await websocket.send(
           json.dumps({
               "action": "send_group_msg",
               "params": {
@@ -168,12 +200,12 @@ async def ban_user(message, websocket):
               },
           }))
   else:
-    websocket.send(
+    await websocket.send(
         json.dumps({
             "action": "send_group_msg",
             "params": {
                 "group_id": message["group_id"],
-                "message": cq_code_at(message["user_id"]) + "还要向上爬才能 ban 别人哦"
+                "message": cq_code_at(message["user_id"]) + "权限不足"
             },
         }))
 
@@ -182,11 +214,19 @@ async def unban_user(message, websocket):
   user_info = await get_group_member_info(message, websocket)
   if (user_info["role"] == "admin" or user_info["role"] == "owner"):
     try:
-      user_id = parse_cq_at(message["message"][6:])
+      user_id = parse_cq_at(message["message"][6:].strip())
       if banned_user.count(user_id) != 0:  # TODO
-        banned_user.pop(user_id)
+        banned_user.remove(user_id)
+      await websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id": message["group_id"],
+                  "message": cq_code_at(message["user_id"]) + "操作成功"
+              },
+          }))
     except:
-      websocket.send(
+      await websocket.send(
           json.dumps({
               "action": "send_group_msg",
               "params": {
@@ -197,12 +237,12 @@ async def unban_user(message, websocket):
               },
           }))
   else:
-    websocket.send(
+    await websocket.send(
         json.dumps({
             "action": "send_group_msg",
             "params": {
                 "group_id": message["group_id"],
-                "message": cq_code_at(message["user_id"]) + "还要向上爬才能 unban 别人哦"
+                "message": cq_code_at(message["user_id"]) + "权限不足"
             },
         }))
 
@@ -213,7 +253,7 @@ async def image_lib(message: dict, websocket):
         and message["message_type"] == "group"):
       message["user_id"] = str(message["user_id"])
       if message["message"][0:7] == "收藏 tag=":
-        add_intended_user(message)
+        await add_intended_user(message, websocket)
       elif intended_users_tag.get(message["user_id"]) != None:
         await add_image_tag(message, websocket)
       elif message["message"][0:2] == "发 ":
