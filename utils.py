@@ -1,5 +1,5 @@
 # TODO: CQ code serialize
-
+# TODO: 扬了 CQ, 突然发现 go-cqhttp 可以返回 json 格式的消息，nnd 我为啥要在这 parse CQ
 
 def cq_code_at(user_id: int) -> str:
   return "[CQ:at,qq=" + str(user_id) + "]"
