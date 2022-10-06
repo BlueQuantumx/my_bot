@@ -1,8 +1,9 @@
 import json
 import atexit
-from utils import cq_code_at, cq_code_image, parse_cq_image, parse_cq_reply
+from utils import cq_code_at, cq_code_image, parse_cq_at, parse_cq_image, parse_cq_reply
 
 intended_users_tag = {}  # {user_id: tag}
+banned_user = []
 image_tag: dict = {}  # {user_id: {tag: (file_id, url)}}
 
 
@@ -112,15 +113,7 @@ async def cancel_collection(message: dict, websocket):
   for (uid, tags) in image_tag.items():
     for (tag, val) in tags.items():
       if (val[0] == file):
-        await websocket.send(
-            json.dumps({
-                "action": "get_group_member_info",
-                "params": {
-                    "group_id": message["group_id"],
-                    "user_id": message["user_id"],
-                },
-            }))
-        user_msg = json.loads(await websocket.recv())["data"]
+        user_msg = await get_group_member_info(message, websocket)
         if user_msg["role"] == "admin" or user_msg[
             "role"] == "owner" or uid == message["user_id"]:
           tags.pop(tag)
@@ -144,6 +137,51 @@ async def cancel_collection(message: dict, websocket):
         return
 
 
+async def get_group_member_info(message, websocket):
+  await websocket.send(
+      json.dumps({
+          "action": "get_group_member_info",
+          "params": {
+              "group_id": message["group_id"],
+              "user_id": message["user_id"],
+          },
+      }))
+  user_msg = json.loads(await websocket.recv())["data"]
+  return user_msg
+
+
+async def ban_user(message, websocket):
+  user_info = await get_group_member_info(message, websocket)
+  if (user_info["role"] == "admin" or user_info["role"] == "owner"):
+    try:
+      user_id = parse_cq_at(message["message"][4:])
+      if banned_user.count(user_id) != 0:  # TODO
+        banned_user.append(user_id)
+    except:
+      websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id": message["group_id"],
+                  "message":
+                  cq_code_at(message["user_id"]) + "出错力，食用方法：ban @user"
+              },
+          }))
+  else:
+    websocket.send(
+        json.dumps({
+            "action": "send_group_msg",
+            "params": {
+                "group_id": message["group_id"],
+                "message": cq_code_at(message["user_id"]) + "还要向上爬才能 ban 别人哦"
+            },
+        }))
+
+
+async def unban_user(message, websocket):
+  pass
+
+
 async def image_lib(message: dict, websocket):
   try:
     if (message["post_type"] == "message"
@@ -157,6 +195,10 @@ async def image_lib(message: dict, websocket):
         await send_image(message, websocket)
       elif message["message"][-4:] == "取消收藏":
         await cancel_collection(message, websocket)
+      elif message["message"][0:3] == "ban":
+        await ban_user(message, websocket)
+      elif message["message"][0:5] == "unban":
+        await unban_user(message, websocket)
 
   except Exception as e:
     print("Exception_from_image_lib:", e)
