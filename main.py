@@ -5,12 +5,13 @@ import websockets
 from debug import debug_print
 from echo import echo
 import image_lib
+from werewolf.werewolf import werewolf
 
 IP_ADDR = "127.0.0.1"
 IP_PORT = "8080"
 
 image_lib.init()
-plugins = [debug_print, echo, image_lib.image_lib]
+plugins = [debug_print, echo, image_lib.image_lib, werewolf]
 
 
 async def serverRecv(websocket):
