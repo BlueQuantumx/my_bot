@@ -1,12 +1,14 @@
 # TODO: CQ code serialize
 # TODO: 扬了 CQ, 突然发现 go-cqhttp 可以返回 json 格式的消息，nnd 我为啥要在这 parse CQ
 
+
 def cq_code_at(user_id: int) -> str:
   return "[CQ:at,qq=" + str(user_id) + "]"
 
 
+# 只用 file_id 规避缓存问题（貌似可以？
 def cq_code_image(file_id, url):
-  return "[CQ:image,file=" + file_id + ",subType=0" + ",url=" + url + "]"
+  return "[CQ:image,file=" + file_id + "]"
 
 
 def parse_cq_image(msg: str):
