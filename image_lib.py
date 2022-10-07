@@ -38,6 +38,7 @@ async def add_intended_user(message, websocket):
                 "message": cq_code_at(message["user_id"]) + "你被 ban 了"
             },
         }))
+    await websocket.recv()
     return
   tag = message["message"][7:]
   intended_users_tag[message["user_id"]] = tag
@@ -61,6 +62,7 @@ async def add_image_tag(message, websocket):
                 "message": cq_code_at(message["user_id"]) + "出错了，检查一下使用方式吧！\n"
             },
         }))
+    await websocket.recv()
   finally:
     intended_users_tag.pop(message["user_id"])
 
@@ -75,6 +77,7 @@ async def send_image(message: dict, websocket):
                 "message": cq_code_at(message["user_id"]) + "你被 ban 了"
             },
         }))
+    await websocket.recv()
     return
   try:
     tag = message["message"][2:]
@@ -88,6 +91,7 @@ async def send_image(message: dict, websocket):
                   "message": cq_code_at(user_id) + "你还没有收藏过图片哦"
               },
           }))
+      await websocket.recv()
     elif image_tag[user_id].get(tag) == None:
       await websocket.send(
           json.dumps({
@@ -97,6 +101,7 @@ async def send_image(message: dict, websocket):
                   "message": cq_code_at(message["user_id"]) + "没有这张图片哦"
               },
           }))
+      await websocket.recv()
     else:
       file_id, url = image_tag[user_id][tag]
       await websocket.send(
@@ -107,6 +112,7 @@ async def send_image(message: dict, websocket):
                   "message": cq_code_image(file_id, url)
               },
           }))
+      await websocket.recv()
   except Exception as e:
     print("Exception_from_send_image:", e)
 
@@ -123,6 +129,7 @@ async def cancel_collection(message: dict, websocket):
                 "message": "请选择图片"
             },
         }))
+    await websocket.recv()
     return
 
   await websocket.send(
@@ -132,6 +139,7 @@ async def cancel_collection(message: dict, websocket):
               "message_id": reply_id,
           },
       }))
+  await websocket.recv()
   reply_msg = json.loads(await websocket.recv())["data"]
   (file, _) = parse_cq_image(reply_msg["message"])
   for (uid, tags) in image_tag.items():
@@ -149,6 +157,7 @@ async def cancel_collection(message: dict, websocket):
                       "message": "取消成功"
                   },
               }))
+          await websocket.recv()
         else:
           await websocket.send(
               json.dumps({
@@ -158,6 +167,7 @@ async def cancel_collection(message: dict, websocket):
                       "message": "取消失败，请确认权限"
                   },
               }))
+          await websocket.recv()
         return
 
 
@@ -170,6 +180,7 @@ async def get_group_member_info(message, websocket):
               "user_id": message["user_id"],
           },
       }))
+  await websocket.recv()
   user_msg = json.loads(await websocket.recv())["data"]
   return user_msg
 
@@ -189,6 +200,7 @@ async def ban_user(message, websocket):
                   "message": cq_code_at(message["user_id"]) + "操作成功"
               },
           }))
+      await websocket.recv()
     except:
       await websocket.send(
           json.dumps({
@@ -199,6 +211,7 @@ async def ban_user(message, websocket):
                   cq_code_at(message["user_id"]) + "出错力，食用方法：ban @user"
               },
           }))
+      await websocket.recv()
   else:
     await websocket.send(
         json.dumps({
@@ -208,6 +221,7 @@ async def ban_user(message, websocket):
                 "message": cq_code_at(message["user_id"]) + "权限不足"
             },
         }))
+    await websocket.recv()
 
 
 async def unban_user(message, websocket):
@@ -225,6 +239,7 @@ async def unban_user(message, websocket):
                   "message": cq_code_at(message["user_id"]) + "操作成功"
               },
           }))
+      await websocket.recv()
     except:
       await websocket.send(
           json.dumps({
@@ -236,6 +251,7 @@ async def unban_user(message, websocket):
                   cq_code_at(message["user_id"]) + "出错力，食用方法：unban @user"
               },
           }))
+      await websocket.recv()
   else:
     await websocket.send(
         json.dumps({
@@ -245,6 +261,7 @@ async def unban_user(message, websocket):
                 "message": cq_code_at(message["user_id"]) + "权限不足"
             },
         }))
+    await websocket.recv()
 
 
 async def image_lib(message: dict, websocket):
