@@ -93,12 +93,22 @@ async def send_image(message: dict, websocket):
           }))
       await websocket.recv()
     elif image_tag[user_id].get(tag) == None:
+      search_res_url = search_bing(tag)
       await websocket.send(
           json.dumps({
               "action": "send_group_msg",
               "params": {
                   "group_id": message["group_id"],
                   "message": cq_code_at(message["user_id"]) + "没有这张图片哦"
+              },
+          }))
+      await websocket.recv()
+      await websocket.send(
+          json.dumps({
+              "action": "send_group_msg",
+              "params": {
+                  "group_id": message["group_id"],
+                  "message": "bot 找到了相关的这张图片" + cq_code_image_url(search_res_url)
               },
           }))
       await websocket.recv()
@@ -262,6 +272,12 @@ async def unban_user(message, websocket):
             },
         }))
     await websocket.recv()
+
+def search_bing(tag: str):
+  res = requests.get("https://cn.bing.com/image/search?q=" + tag)
+  match_res = re.match(r'.*?<img class="mimg".*?src=(.*?)>.*?', res.text, re.S | re. M).group(1)
+  url = match_res.split()[0][1:-1]
+  return url
 
 
 async def image_lib(message: dict, websocket):

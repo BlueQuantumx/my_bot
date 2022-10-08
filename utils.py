@@ -10,6 +10,8 @@ def cq_code_at(user_id: int) -> str:
 def cq_code_image(file_id, url):
   return "[CQ:image,file=" + file_id + "]"
 
+def cq_code_image_url(url):
+  return "[CQ:image,url=" + url + "]"
 
 def parse_cq_image(msg: str):
   msg = msg[1:-1]
